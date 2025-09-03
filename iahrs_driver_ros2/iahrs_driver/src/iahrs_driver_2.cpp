@@ -262,7 +262,7 @@ public:
             std::bind(&IAHRS::Euler_angle_reset_callback, this, std::placeholders::_1, std::placeholders::_2));
 
 		
-		 // 맵, pose 구독 (람다 콜백)-> pose 삭제 해도 ㄱㅊ 이미 카메라 sub 있음
+		 // 맵, pose 구독 (람다 콜백)-> pose 
         map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/map", 10,
             [this](const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
@@ -276,11 +276,7 @@ public:
             }
         );
 
-		// hill_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    	// "/detected_hill_pose", 10,
-    	// [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-        // 			this->hillCallback(msg);
-    	// });
+		
 
 		 // 파라미터로 토픽명 설정 (기본: /sand_hills, /robot_location)
     	declare_parameter<std::string>("hill_topic", "/sand_hills");
@@ -927,7 +923,7 @@ public:
 	}
 
 	// ─────────────────────────────────────────────
-	// [무슨 함수?] IMU2용 동일 로직 (필요할 때만 호출)
+	// IMU2용 동일 로직 (필요할 때만 호출)
 	void update_imu_dr_2(double ax_body, double ay_body, double yaw_rad, double dt)
 	{
 		if (dt <= 0.0) return;
@@ -955,12 +951,12 @@ public:
 	}
 
 	// ─────────────────────────────────────────────
-	// [무슨 함수?] DR 상태 리셋
+	// DR 상태 리셋
 	void reset_imu_dr_1(){ dr1_ = DRState2D{}; }
 	void reset_imu_dr_2(){ dr2_ = DRState2D{}; }
 
 	// ─────────────────────────────────────────────
-	// [무슨 함수?] DR 상태 조회
+	// DR 상태 조회
 	void get_imu_dr_1(double& px, double& py, double& vx, double& vy) const
 	{ px = dr1_.px; py = dr1_.py; vx = dr1_.vx; vy = dr1_.vy; }
 
@@ -969,11 +965,11 @@ public:
 
 
 
-	//imu 기준으로 찾은 거라 수정필수
+	//imu 기준으로 찾은 거
 	void hill_detector(double roll_deg_1, double pitch_deg_1, double yaw_deg_1, double roll_deg_2, double pitch_deg_2, double yaw_deg_2)
 
 	{
-		//이거 맞냐? 조건 수정하긴 해야 할 듯?
+		
 		if (abs(abs(roll_deg_1) - abs(roll_deg_2)) > 30)
 
 		{
@@ -1271,7 +1267,7 @@ public:
 		if (!yaw_initialized) {
 			initial_yaw_deg = yaw_1_rad * 180.0 / M_PI;
 			yaw_initialized = true;
-			RCLCPP_INFO(this->get_logger(), "✅ 초기 yaw 설정됨: %.2f deg", initial_yaw_deg);
+			RCLCPP_INFO(this->get_logger(), "초기 yaw 설정됨: %.2f deg", initial_yaw_deg);
 		}
 	}
 
@@ -1301,7 +1297,7 @@ public:
 		while (yaw_error > 180) yaw_error -= 360;
 		while (yaw_error < -180) yaw_error += 360;
 
-		// 방향 판단 + 몇 초 회전 했을 때 얼마 회전하는 지 확인 해야 할 듯(표준화..?)
+		
 		if (std::abs(yaw_error) > 15.0) {
 			if (yaw_error > 0)
 			RCLCPP_INFO(this->get_logger(), " 왼쪽으로 회전 (%.1f도)", yaw_error);
@@ -1313,8 +1309,8 @@ public:
 	}
 
 
-	//모드 전환 모터 제어 없음
-	void check_wall_collision(int16_t motor6_pos, int16_t motor7_pos,
+	//모드 전환 
+void check_wall_collision(int16_t motor6_pos, int16_t motor7_pos,
 		double x, double y,
 		double& out_link1_x, double& out_link1_y,
 		double& out_link2_x, double& out_link2_y)
@@ -1364,7 +1360,7 @@ public:
 		}
 	}
 
-	void initialize_positions() 	//좌표값 왜 이럼, 꼭짓점 가는 건가 이걸로
+	void initialize_positions() 	
 	{
 		geometry_msgs::msg::PoseStamped p;
 
@@ -1427,7 +1423,7 @@ public:
 	int16_t motor8_speed;
 
 
-	// 여기서 지정하면 값이 바뀌었을 때 아래 함수에서 변경이 안되는 타이밍 있을 수도 -> 애초에 안 바뀔 예정이라 일단 진행
+	
 	double target_pitch;
     double target_yaw;
     double target_roll;        
@@ -1441,14 +1437,7 @@ public:
 	double prev_error_pitch_2 = 0.0, prev_error_yaw_2 = 0.0, prev_error_roll_2 = 0.0;
     double integral_pitch_2 = 0.0, integral_yaw_2 = 0.0, integral_roll_2 = 0.0;
 
-    // double Kp_pitch = 150.0, Ki_pitch = 10.0, Kd_pitch = 5.0;
-    // double Kp_yaw = 100.0, Ki_yaw = 10.0, Kd_yaw = 5.0;
-    // double Kp_roll = 150.0, Ki_roll = 3, Kd_roll = 10.0;
-
-    // // Motor2와 Motor6의 범위를 맞추기 위해 Motor6 PID 계수 보정
-    // double Kp_yaw_106 = Kp_yaw * (4095.0 / 1023.0) * 1.5;
-    // double Ki_yaw_106 = Ki_yaw * (4095.0 / 1023.0) * 0.1;
-    // double Kd_yaw_106 = Kd_yaw * (4095.0 / 1023.0) * 5;
+ 
 
 	// PID 계수 (가중치를 yaw1, yaw2 별도로 관리 가능)
 	double Kp_pitch_1 = 150.0, Ki_pitch_1 = 10.0, Kd_pitch_1 = 5.0;
@@ -1524,11 +1513,7 @@ public:
             //forward_state = 1;
         }
 
-		//원본 참고용으로 남김
-		// motor3_speed = basic_speed_inverse + 200 - static_cast<int16_t>(control_roll_1 * 0.1);
-		// motor4_speed = basic_speed_inverse - static_cast<int16_t>(control_roll_1 * 0.1);
-		// motor8_speed = basic_speed_inverse + 100 - static_cast<int16_t>(control_roll_1 * 0.1);
-
+		
 		set_motor_speeds(motor3_speed, motor4_speed, motor8_speed);
 	}
 
@@ -1557,10 +1542,7 @@ public:
             //forward_state = 1;
         }
 
-		//원본 참고용으로 남김
-		// motor3_speed = basic_speed_inverse + 200 - static_cast<int16_t>(control_roll_1 * 0.1);
-		// motor4_speed = basic_speed_inverse - static_cast<int16_t>(control_roll_1 * 0.1);
-		// motor8_speed = basic_speed_inverse + 100 - static_cast<int16_t>(control_roll_1 * 0.1);
+		
 
 		set_motor_speeds(motor3_speed, motor4_speed, motor8_speed);
 	}
@@ -1595,10 +1577,7 @@ public:
 						move_Right_mode1(imu_data.roll_1, imu_data.pitch_1, imu_data.yaw_1,
 										imu_data.roll_2, imu_data.pitch_2, imu_data.yaw_2);
 
-						// ✅ t1은 더 이상 필요 없으므로 cancel
-						// for (auto& t : timers_) if (t) t->cancel();
-						// timers_.clear();
-
+						
 						if (shutting_down_) return;
 
 						auto t2 = this->create_wall_timer(
@@ -1624,7 +1603,7 @@ public:
 									//stop_motors();
 									is_mode1_running = false;
 									if (shutting_down_) return;
-									RCLCPP_INFO(this->get_logger(), "✅ 초기 yaw로 복귀 완료 → 정지");
+									RCLCPP_INFO(this->get_logger(), "초기 yaw로 복귀 완료 → 정지");
 								}
 							}
 						);
@@ -1635,13 +1614,8 @@ public:
 			timers_.push_back(t1);
 	}
 
-	// --- 추가: 튜닝이 필요한 새로운 상수 정의 ---
-
-	// basic_speed(1000)가 대략 어느 정도의 전진 속도(m/s)에 해당하는지 정의합니다.
-	// 이 값은 실제 로봇을 주행시켜보고 측정해야 하는 중요한 튜닝 값입니다.
-	#define NEUTRAL_FORWARD_VELOCITY 0.02  // 예: basic_speed가 0.2 m/s에 해당한다고 가정
-
-	// 속도(m/s)를 모터 제어값으로 변환하기 위한 변환 계수
+	
+	#define NEUTRAL_FORWARD_VELOCITY 0.02  
 	#define VELOCITY_TO_MOTOR_SPEED 1000.0
 
 
@@ -1675,7 +1649,7 @@ public:
 		// MPC의 목표 속도와 로봇의 평균 속도(NEUTRAL_FORWARD_VELOCITY)의 '차이'를 계산
 		double velocity_error = target_linear_velocity - NEUTRAL_FORWARD_VELOCITY;
 		
-		// 이 속도 차이를 모터에 인가할 '추가적인' 속도 보정값으로 변환
+		// 이 속도 차이를 모터에 인가할 속도 보정값으로 변환
 		int16_t linear_velocity_adjustment = static_cast<int16_t>(velocity_error * VELOCITY_TO_MOTOR_SPEED);
 
 		// 속도 모터 계산
@@ -1734,33 +1708,33 @@ public:
 	}
 
 
-    // void pid_control_mode2(double pitch_1, double pitch_2, double yaw_1, double yaw_2) {
+     void pid_control_mode2(double pitch_1, double pitch_2, double yaw_1, double yaw_2) {
     
-    //     // pitch 제어 추가됨
-    //     double pitch_control_1 = compute_pid(target_pitch, pitch_1, integral_pitch_1, prev_error_pitch_1,
-    //                                         Kp_pitch_1, Ki_pitch_1, Kd_pitch_1, 0.6);
+         // pitch 제어 추가됨
+        double pitch_control_1 = compute_pid(target_pitch, pitch_1, integral_pitch_1, prev_error_pitch_1,
+                                            Kp_pitch_1, Ki_pitch_1, Kd_pitch_1, 0.6);
 
-    //     double pitch_control_2 = compute_pid(target_pitch, pitch_2, integral_pitch_2, prev_error_pitch_2,
-    //                                         Kp_pitch_2, Ki_pitch_2, Kd_pitch_2, 0.625);
+         double pitch_control_2 = compute_pid(target_pitch, pitch_2, integral_pitch_2, prev_error_pitch_2,
+                                             Kp_pitch_2, Ki_pitch_2, Kd_pitch_2, 0.625);
 
-    //     // yaw 제어도 yaw1, yaw2 각각 분리됨
-    //     double yaw_control_1 = compute_pid(target_yaw, yaw_1, integral_yaw_1, prev_error_yaw_1,
-    //                                     Kp_yaw_106_1, Ki_yaw_106_1, Kd_yaw_106_1, (4095.0 / 1023.0));
+        // yaw 제어도 yaw1, yaw2 각각 분리됨
+         double yaw_control_1 = compute_pid(target_yaw, yaw_1, integral_yaw_1, prev_error_yaw_1,
+                                         Kp_yaw_106_1, Ki_yaw_106_1, Kd_yaw_106_1, (4095.0 / 1023.0));
 
-    //     double yaw_control_2 = compute_pid(target_yaw, yaw_2, integral_yaw_2, prev_error_yaw_2,
-    //                                     Kp_yaw_106_2, Ki_yaw_106_2, Kd_yaw_106_2, (4095.0 / 1023.0));
+        double yaw_control_2 = compute_pid(target_yaw, yaw_2, integral_yaw_2, prev_error_yaw_2,
+                                         Kp_yaw_106_2, Ki_yaw_106_2, Kd_yaw_106_2, (4095.0 / 1023.0));
 
-    //     // 최종 전진 명령 수행 (pitch 제어값도 모터 위치에 적용 가능하도록 확장 가능)
-    //     move_forward_mode2(yaw_control_1, yaw_control_2);
+         // 최종 전진 명령 수행 (pitch 제어값도 모터 위치에 적용 가능하도록 확장 가능)
+         move_forward_mode2(yaw_control_1, yaw_control_2);
         
-    //     // 모터 1, 5 (pitch 모터) PID 제어값으로 위치 제어
-    //     uint8_t dxl_error = 0;
-    //     motor1_position = initial_motor1_position + static_cast<int16_t>(pitch_control_1);
-    //     motor5_position = initial_motor5_position + static_cast<int16_t>(pitch_control_2);
+        // 모터 1, 5 (pitch 모터) PID 제어값으로 위치 제어
+         uint8_t dxl_error = 0;
+         motor1_position = initial_motor1_position + static_cast<int16_t>(pitch_control_1);
+         motor5_position = initial_motor5_position + static_cast<int16_t>(pitch_control_2);
 
-    //     packetHandler->write2ByteTxRx(portHandler, DXL1_ID, ADDR_GOAL_POSITION, motor1_position, &dxl_error);
-    //     packetHandler->write2ByteTxRx(portHandler, DXL5_ID, ADDR_GOAL_POSITION, motor5_position, &dxl_error);
-    // }
+         packetHandler->write2ByteTxRx(portHandler, DXL1_ID, ADDR_GOAL_POSITION, motor1_position, &dxl_error);
+         packetHandler->write2ByteTxRx(portHandler, DXL5_ID, ADDR_GOAL_POSITION, motor5_position, &dxl_error);
+     }
 
 
     // MODE2 전체 흐름을 정리한 최상위 동작 함수
@@ -1783,13 +1757,13 @@ public:
     	}
 
         if (yaw_deg_1 < -25.0 || mode_state == 0 || saved_y > 0.68) {
-            RCLCPP_INFO(this->get_logger(), "@@@@@@@go back!!!!!!!!!!!");
+            RCLCPP_INFO(this->get_logger(), "go back!!!!!!!!!!!");
             turn_left_mode2();
             mode_state = 0;
             reset_pid_state();
         }
         else if (yaw_deg_1 > 0.0 || (saved_y > 0.50 && saved_y < 0.65)) {
-            RCLCPP_INFO(this->get_logger(), "@@@@@@@@@@@@@@right on target!!!!!!!!!!!!");
+            RCLCPP_INFO(this->get_logger(), "right on target!!!!!!!!!!!!");
             mode_state = 1;
             move_forward_mode2(pitch_1, pitch_2, yaw_1, yaw_2);  // 전진
         }
@@ -1800,7 +1774,7 @@ public:
         // 특정 조건에서 정지 예시 (추가 가능)
         if (saved_x > 0.9) {
             stop_motors();
-            RCLCPP_INFO(this->get_logger(), "@@@@@@@@@@@@@@arrived!!!!!!!!!!!!");
+            RCLCPP_INFO(this->get_logger(), "arrived!!!!!!!!!!!!");
         }
     }
 	
@@ -1818,7 +1792,7 @@ public:
 	double pitch_deg_2 = pitch_2 * 180.0 / M_PI;
 	double yaw_deg_2 = yaw_2 * 180.0 / M_PI;
 
-	RCLCPP_INFO(this->get_logger(), "!!!!!!!!!!!!!!Using pose: (%.2f, %.2f, %.2f)", saved_x, saved_y, saved_z);
+	RCLCPP_INFO(this->get_logger(), "!!!!!!Using pose: (%.2f, %.2f, %.2f)", saved_x, saved_y, saved_z);
 	
 
 	RCLCPP_INFO(this->get_logger(), "IMU_1 Data Received - Roll: %.2f, Pitch: %.2f, Yaw: %.2f", roll_deg_1, pitch_deg_1, yaw_deg_1);
@@ -1892,8 +1866,7 @@ public:
     //motor7_position = initial_motor7_position + static_cast<int16_t>(control_signal_yaw_106_2);	
 
 	
-	//걍 좦표값 받아서 수정하는 걸로 ㄱ 근데 PID 제어값 리셋은 해줘야 함 언젠가
-	//음 넘어짐 그리고 몸통 1이 토크 과부하 걸리고 몸통 3은 왜 위로 올라가냐
+	
 	 if (roll_deg_1 < - 30.0 || mode_state == 0 )
 	 {
 	 	RCLCPP_INFO(this->get_logger(), "!!!!!stand up!!!!!!!!!!!");
@@ -1917,20 +1890,20 @@ public:
 	 }
 
 
-	// if (saved_y < 0.30)
-	// {
-	// 	motor3_speed = 0;
-	//  	motor4_speed = 0;
-	//  	motor8_speed = 0;
-	// }
+	 if (saved_y < 0.30)
+	 {
+	 	motor3_speed = 0;
+	 	motor4_speed = 0;
+	  	motor8_speed = 0;
+	 }
 
 	uint8_t dxl_error = 0;
 	//packetHandler->write2ByteTxRx(portHandler, DXL2_ID, ADDR_GOAL_POSITION, motor2_position, &dxl_error);
 	packetHandler->write2ByteTxRx(portHandler, DXL1_ID, ADDR_GOAL_POSITION, motor1_position, &dxl_error);
 	packetHandler->write2ByteTxRx(portHandler, DXL5_ID, ADDR_GOAL_POSITION, motor5_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL6_ID, ADDR_GOAL_POSITION, motor6_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL7_ID, ADDR_GOAL_POSITION, motor7_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL9_ID, ADDR_GOAL_POSITION, motor9_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL6_ID, ADDR_GOAL_POSITION, motor6_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL7_ID, ADDR_GOAL_POSITION, motor7_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL9_ID, ADDR_GOAL_POSITION, motor9_position, &dxl_error);
 
 	packetHandler->write2ByteTxRx(portHandler, DXL3_ID, ADDR_GOAL_VELOCITY, motor3_speed, &dxl_error);
     packetHandler->write2ByteTxRx(portHandler, DXL4_ID, ADDR_GOAL_VELOCITY, motor4_speed, &dxl_error);
@@ -1954,7 +1927,7 @@ public:
 	current_position.x = saved_x;
 	current_position.y = saved_y;
 
-	//move_to_next_position(current_position);
+	move_to_next_position(current_position);
 
 	//나중에 모드 변환 코드 + 충돌 코드(연결) + 반대로 이동 코드 넣어야 함
 	if (saved_y < 0.30) { // 특정 조건 만족 시 mode 변경 예시
@@ -1993,7 +1966,7 @@ void MODE2(double roll_1, double pitch_1, double yaw_1, double roll_2, double pi
 	initial_motor5_position = 2048;
 	initial_motor6_position = 3000;
     initial_motor7_position = 1100;
-    //motor9_position = 2500;
+    
 
 	double error_pitch_1 = target_pitch - pitch_1;
 	double error_yaw_1 = target_yaw - yaw_1;
@@ -2050,17 +2023,17 @@ void MODE2(double roll_1, double pitch_1, double yaw_1, double roll_2, double pi
 	// motor4_speed = basic_speed;
 	 motor8_speed = (motor3_speed + (motor4_speed - 1024) )/2 - 50;
 
-    //motor5_position = initial_motor5_position + static_cast<int16_t>(control_signal_pitch);
+    motor5_position = initial_motor5_position + static_cast<int16_t>(control_signal_pitch);
 	motor1_position = initial_motor1_position + static_cast<int16_t>(control_signal_pitch_1);
     motor5_position = initial_motor5_position + static_cast<int16_t>(control_signal_pitch_2);
-    //motor6_position = initial_motor6_position - static_cast<int16_t>(control_signal_yaw_106_1);
-    //motor7_position = initial_motor7_position + static_cast<int16_t>(control_signal_yaw_106_2);	
+    motor6_position = initial_motor6_position - static_cast<int16_t>(control_signal_yaw_106_1);
+    motor7_position = initial_motor7_position + static_cast<int16_t>(control_signal_yaw_106_2);	
 
 	
 	//걍 좦표값 받아서 수정하는 걸로 ㄱ 근데 PID 제어값 리셋은 해줘야 함 언젠가
 	 if (yaw_deg_1 < - 25.0 || mode_state == 0  || saved_y > 0.68)
 	 {
-	 	RCLCPP_INFO(this->get_logger(), "@@@@@@@go back!!!!!!!!!!!");
+	 	RCLCPP_INFO(this->get_logger(), "go back!!!!!!!!!!!");
 		
 		motor1_position = 2048;
 		motor5_position = 2048;
@@ -2076,7 +2049,7 @@ void MODE2(double roll_1, double pitch_1, double yaw_1, double roll_2, double pi
 	 }
 	
 	if( /*yaw_deg_1 < - 5.0 &&*/ yaw_deg_1 > 0.0 || (saved_y > 0.50 && saved_y < 0.65)){
-	 	RCLCPP_INFO(this->get_logger(), "@@@@@@@@@@@@@@right on target!!!!!!!!!!!!");
+	 	RCLCPP_INFO(this->get_logger(), "right on target!!!!!!!!!!!!");
 	 	mode_state = 1;
 	 }
 
@@ -2086,17 +2059,17 @@ void MODE2(double roll_1, double pitch_1, double yaw_1, double roll_2, double pi
 	 	motor4_speed = 0;
 	 	motor8_speed = 0;
 
-		RCLCPP_INFO(this->get_logger(), "@@@@@@@@@@@@@@arrived!!!!!!!!!!!!");
+		RCLCPP_INFO(this->get_logger(), "arrived!!!!!!!!!!!!");
 
 	 }
 
 	uint8_t dxl_error = 0;
-	//packetHandler->write2ByteTxRx(portHandler, DXL2_ID, ADDR_GOAL_POSITION, motor2_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL2_ID, ADDR_GOAL_POSITION, motor2_position, &dxl_error);
 	packetHandler->write2ByteTxRx(portHandler, DXL1_ID, ADDR_GOAL_POSITION, motor1_position, &dxl_error);
 	packetHandler->write2ByteTxRx(portHandler, DXL5_ID, ADDR_GOAL_POSITION, motor5_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL6_ID, ADDR_GOAL_POSITION, motor6_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL7_ID, ADDR_GOAL_POSITION, motor7_position, &dxl_error);
-	//packetHandler->write2ByteTxRx(portHandler, DXL9_ID, ADDR_GOAL_POSITION, motor9_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL6_ID, ADDR_GOAL_POSITION, motor6_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL7_ID, ADDR_GOAL_POSITION, motor7_position, &dxl_error);
+	packetHandler->write2ByteTxRx(portHandler, DXL9_ID, ADDR_GOAL_POSITION, motor9_position, &dxl_error);
 
 	packetHandler->write2ByteTxRx(portHandler, DXL3_ID, ADDR_GOAL_VELOCITY, motor3_speed, &dxl_error);
     packetHandler->write2ByteTxRx(portHandler, DXL4_ID, ADDR_GOAL_VELOCITY, motor4_speed, &dxl_error);
@@ -2122,7 +2095,7 @@ void MODE2(double roll_1, double pitch_1, double yaw_1, double roll_2, double pi
 	move_to_next_position(current_position);
 	 
 
-	//hill_destroy();
+	hill_destroy();
 
 
 }
@@ -2326,7 +2299,7 @@ private:
         }
         map_received_ = true;
     }
-	//이거 곧 삭제 될 예정 public의 pose_callback 으로 대체될 예정
+	
     void poseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
         current_pose_ = *msg;
         pose_received_ = true;
@@ -2351,7 +2324,7 @@ private:
         RCLCPP_INFO(this->get_logger(), ">> 새로운 언덕 발견 및 리스트에 추가! 총 %zu개", hills_.size());
     }
 
-    // 이 변수들은 타임아웃 용도로 계속 갱신하는 것이 좋습니다.
+    
     last_hill_update_time_ = this->now();
 
     }
@@ -2368,10 +2341,10 @@ private:
 		for (size_t i = 0; i < hills_.size(); i++) {
 			if (hills_destroyed_[i]) continue; // 파괴된 언덕은 건너뜀
 
-			// <<-- 핵심 수정: current_pose_ 대신 last_loc_ 을 사용합니다. -->>
+			
 			double dx = hills_[i].pose.position.x - last_loc_.pose.position.x;
 			double dy = hills_[i].pose.position.y - last_loc_.pose.position.y;
-			double dist = std::hypot(dx, dy); // sqrt(dx*dx + dy*dy) 보다 hypot이 더 안전하고 빠름
+			double dist = std::hypot(dx, dy); 
 
 			if (dist < min_dist) {
 				min_dist = dist;
@@ -2404,7 +2377,7 @@ private:
 
 		geometry_msgs::msg::PoseStamped target;
 		if (!findNextHill(target)) {
-			RCLCPP_INFO(this->get_logger(), "🎉 모든 언덕을 파괴했습니다!");
+			RCLCPP_INFO(this->get_logger(), " 모든 언덕을 파괴했습니다!");
 			return;
 		}
 
@@ -2417,7 +2390,7 @@ private:
             // 방문 경로 기록
             markVisited(path);
 
-			// ✅ 도착 확인 및 언덕 파괴
+			// 도착 확인 및 언덕 파괴
 			if (has_arrived(current_pose_, target, 0.3)) {
 				markHillDestroyed(target);
 			}
@@ -2590,7 +2563,7 @@ int main (int argc, char** argv)
 
 	//auto node = std::shared_ptr<IAHRS>();
 
-	// Create a function for when messages are to be sent.
+	
 	setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 	
 	double roll_1, pitch_1, yaw_1;
@@ -2606,7 +2579,7 @@ int main (int argc, char** argv)
 
     //rclcpp::WallRate loop_rate(100); 
 
-	IAHRS& iahrs = *node;   // node가 가리키는 동일한 객체를 iahrs 라는 이름으로 쓴다
+	IAHRS& iahrs = *node;   
 
 
 	// These values do not need to be converted
@@ -2675,27 +2648,20 @@ int main (int argc, char** argv)
 			iahrs.imu_data.yaw_2
 		);
 
-		// 동작 실험.
-		//iahrs.execute_mode1(iahrs.saved_x, iahrs.saved_y);
+		
+		iahrs.execute_mode1(iahrs.saved_x, iahrs.saved_y);
 
-		// if (iahrs.mode_change == 1) {
-		// 	iahrs.MODE1(roll_1, pitch_1, yaw_1, roll_2, pitch_2, yaw_2);
-		// }
-		// else if (iahrs.mode_change == 2) {
-		// 	iahrs.MODE2(roll_1, pitch_1, yaw_1, roll_2, pitch_2, yaw_2);
-		// }
+		iahrs.MODE1(roll_1,pitch_1,yaw_1,roll_2,pitch_2,yaw_2);
 
-		//iahrs.MODE1(roll_1,pitch_1,yaw_1,roll_2,pitch_2,yaw_2);
-
-		//iahrs.MODE2(roll_1,pitch_1,yaw_1,roll_2,pitch_2,yaw_2); 
+		iahrs.MODE2(roll_1,pitch_1,yaw_1,roll_2,pitch_2,yaw_2); 
 
 		iahrs.hill_destroy();
 
-		//iahrs.move_forward_mode2();
+		iahrs.move_forward_mode2();
 
-		//iahrs.set_motor_speeds(iahrs.basic_speed + 200, iahrs.basic_speed_inverse + 70, iahrs.basic_speed_inverse + 200 );
+		iahrs.set_motor_speeds(iahrs.basic_speed + 200, iahrs.basic_speed_inverse + 70, iahrs.basic_speed_inverse + 200 );
 
-		//iahrs.execute_mode1(roll_1, pitch_1, yaw_1, roll_2, pitch_2, yaw_2, iahrs.saved_x, iahrs.saved_y);
+		iahrs.execute_mode1(roll_1, pitch_1, yaw_1, roll_2, pitch_2, yaw_2, iahrs.saved_x, iahrs.saved_y);
 
 	
 
